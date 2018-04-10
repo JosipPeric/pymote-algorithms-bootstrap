@@ -1,68 +1,6 @@
 
-# coding: utf-8
-
-# In[86]:
-
-
-from pymote import *
-from pymote.sensor import TemperatureSensor
-from pymote.sensor import NeighborsSensor
-node = Node()
-
-
-# In[87]:
-
-
-net = Network()
-net.add_node(node)
-node = net.add_node()
-
-
-# In[88]:
-
-
-node.compositeSensor = (TemperatureSensor, 'Temp', NeighborsSensor, 'Neighbor' )
-#node.compositeSensor.read()
-
-
-# In[89]:
-
-
-get_ipython().magic(u'matplotlib inline')
-
-
-# In[90]:
-
-
-for node in net.nodes():
-    node.commRange = 600
-net.recalculate_edges()
-
-
-# In[91]:
-
-
-net_gen = NetworkGenerator(10) 
-net = net_gen.generate_random_network()
-net.show()
-
-
-# In[92]:
-
-
-from pymote.algorithms.broadcast import Flood
-from pymote.message import Message
-message = Message()
-net.communicate()
-
-
-# In[103]:
-
-
 from pymote.algorithm import NodeAlgorithm
 from pymote.message import Message
-
-
 
 class Temp_Flood(NodeAlgorithm):
     required_params = ('informationKey',)
@@ -84,7 +22,7 @@ class Temp_Flood(NodeAlgorithm):
         if message.header==NodeAlgorithm.INI:
             print "Message:" , node.memory[self.informationKey] , " Temp:" , node.memory['Temperature']
             node.memory['Maxtemp'] = node.memory['Temperature']
-            #Praktički nepotrebno jer smo dole odredili za prvi korak initiator node I = Temp
+            #Prakticki nepotrebno jer smo dole odredili za prvi korak initiator node I = Temp
             if node.memory[self.informationKey] > node.memory['Temperature']:
                 node.send(Message(header='Information',  # default destination: send to every neighbor
                                   data=node.memory[self.informationKey]))
@@ -101,7 +39,7 @@ class Temp_Flood(NodeAlgorithm):
             destination_nodes = list(node.memory[self.neighborsKey])
             destination_nodes.remove(message.source) # send to every neighbor-sender
             if destination_nodes:
-                #Je li dobivena tj. primljena  poruka (temp) veća od temperature ovog čvora?
+                #Je li dobivena tj. primljena  poruka (temp) veca od temperature ovog cvora?
                 if node.memory[self.informationKey] > node.memory['Temperature']:
                     node.send(Message(destination=destination_nodes, header='Information', 
                                       data=message.data))
@@ -128,40 +66,4 @@ class Temp_Flood(NodeAlgorithm):
               'DONE': done,
              }
 
-
-# In[104]:
-
-
-net.algorithms = ( (Temp_Flood, {'informationKey':'I'}), )
-
-
-# In[105]:
-
-
-for node in net.nodes():
-    node.compositeSensor = (TemperatureSensor, 'Temp', NeighborsSensor, 'Neighbor' )
-    node.memory['Temperature'] = node.compositeSensor.read()['Temp']
-    print node.memory['Temperature']
-
-
-# In[106]:
-
-
-some_node = net.nodes()[0]
-some_node.memory['I'] = some_node.memory['Temperature']
-print some_node.memory
-
-
-# In[107]:
-
-
-sim = Simulation(net)
-sim.run()
-
-
-# In[108]:
-
-
-for node in net.nodes():
-    print node.memory['Maxtemp']
 
