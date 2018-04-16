@@ -1,6 +1,13 @@
-
 from pymote.algorithm import NodeAlgorithm
 from pymote.message import Message
+from pymote.algorithm.sensor_new import *
+
+class TemperatureSensor(Sensor):
+
+    @node_in_network
+    def read(self, node):
+        temp = randint(1, 255)
+        return {'Temp': temp }
 
 class Temp_Flood(NodeAlgorithm):
     required_params = ('informationKey',)
