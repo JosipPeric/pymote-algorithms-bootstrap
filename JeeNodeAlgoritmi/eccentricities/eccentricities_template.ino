@@ -368,8 +368,26 @@ uint8_t find_max_neighbor(){
   return max_id;
 }
 
+// Finds the 2nd highest value which should be sent to the node that gave the max value
+uint8_t get_2nd_max_value(){
+  uint8_t max = 0;
+  uint8_t max_2 = 0;
+
+  for(int i = 0; i < MAX_NODES; i++){
+    if (g_max_neighbors[i] > max){
+      max_2 = max;
+      max = g_max_neighbors[i];
+    }
+  }
+  return max_2;
+}
+
+
 // Sends eccentricity through the network
 void resolve_function(){
 	uint8_t max_neighbor = find_max_neighbor();	
+  uint8_t max_2nd = get_2nd_max_value();
+  uint8_t parent = find_neighbor();
 
+  //Fill in
 }

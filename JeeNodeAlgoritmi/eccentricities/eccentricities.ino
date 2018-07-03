@@ -301,6 +301,7 @@ void set_status(uint8_t s) {
 
 uint8_t are_neighbors(uint8_t id1, uint8_t id2) {
   uint8_t ret = 0;
+
   for (int i = 0; i < MAX_NODES; ++i) {
     ret |= g_neighbors[i] && id2==g_neighbors[i];
     //D(id2);
@@ -314,6 +315,7 @@ uint8_t are_neighbors(uint8_t id1, uint8_t id2) {
 // Returns the number of neighbors of a node
 uint8_t count_neighbors(){  
   uint8_t cnt = 0;
+
   for (int i=0; i < MAX_NODES; i++) {  //Check if the node has more than 1 neighbor
           if (g_destnodes[i] > 0){ // If a node has a neighbor, the value is its ID which is > 0 (1-16)
             cnt += 1;
@@ -326,6 +328,7 @@ uint8_t count_neighbors(){
 uint8_t count_max_neighbors(){  
   uint8_t cnt = 0;
   uint8_t max_dist = 0;
+
   for (int i=0; i < MAX_NODES; i++) { 
           if ((g_max_neighbors[i] > 0) && (g_max_neighbors[i] > max_dist)){ // If a node has a neighbor, the value is its ID which is > 0 (1-16)
             max_dist = g_max_neighbors[i];
@@ -352,6 +355,7 @@ void remove_neighbor(uint8_t id){
 
 // Finds the only remaining neighbor of a node
 uint8_t find_neighbor(){;
+
   for (int i = 0; i < MAX_NODES; i++){
     if (g_destnodes[i] > 0){
       return g_destnodes[i];
@@ -364,6 +368,7 @@ uint8_t find_neighbor(){;
 uint8_t find_max_neighbor(){
   uint8_t max_val = 0;
   uint8_t max_id = 0;	
+
   for (int i = 0; i < MAX_NODES; i++){
     if ((g_max_neighbors[i] > 0) && (g_max_neighbors[i] > max_val)){
       max_id = i;
@@ -373,20 +378,44 @@ uint8_t find_max_neighbor(){
   return max_id;
 }
 
+// Finds the 2nd highest value which should be sent to the node that gave the max value
+uint8_t get_2nd_max_value(){
+	uint8_t max = 0;
+	uint8_t max_2 = 0;
+
+	for(int i = 0; i < MAX_NODES; i++){
+		if (g_max_neighbors[i] > max){
+			max_2 = max;
+			max = g_max_neighbors[i];
+		}
+	}
+	return max_2;
+}
+
 // Sends eccentricity through the network
 void resolve_function(){
 	
 	uint8_t max_neighbor = find_max_neighbor();
+	uint8_t max_2nd = get_2nd_max_value();
+	uint8_t parent = find_neighbor();
 
 	if (count_max_neighbors() > 1){
 		g_message.resolve.val = g_maxdistance + 1; 
-		pushOutboxQueue(Resolve, 0, &g_message, sizeof(resolveS));
+		for (int j = 0; j < MAX_NODES; ++j){
+			if ((g_neighbors[j] > 0) && (g_neighbors[j] != parent)){	
+				pushOutboxQueue(Resolve, g_neighbors[j], &g_message, sizeof(resolveS));
+			}
+		}
 	} else{
-		g_message.resolve.val = g_distance + 1;
+		if (max_2nd > g_distance){
+			g_message.resolve.val = max_2nd + 1;
+		} else {
+			g_message.resolve.val = g_distance + 1;
+		}
 		pushOutboxQueue(Resolve, max_neighbor, &g_message, sizeof(resolveS));
 		g_message.resolve.val = g_maxdistance + 1;
 		for (int i = 0; i < MAX_NODES; ++i){
-			if ((g_neighbors[i] > 0) && (g_neighbors[i] != max_neighbor)){
+			if ((g_neighbors[i] > 0) && (g_neighbors[i] != max_neighbor) && (g_neighbors[i] != parent)){
 				pushOutboxQueue(Resolve, g_neighbors[i], &g_message, sizeof(resolveS));
 			}
 		}
